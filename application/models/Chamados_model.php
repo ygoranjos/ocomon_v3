@@ -1,0 +1,345 @@
+<?php
+if (!defined('BASEPATH')) {
+    exit('No direct script access allowed');
+}
+
+class Chamados_model extends CI_Model {
+
+    public function __construct() {
+        parent::__construct();
+    }
+
+    public function functionget_chamados_user($dados){
+        $status = array(1,2);//array com os status para aparecer na lista de chamado do usuario
+        $this->db->select('*');
+        $this->db->from('chamados');
+        $this->db->where('id_user', $dados['id_user']);
+        $this->db->where_in('status', $status);
+        $query=$this->db->get();
+        return $query->result();
+    }
+
+    public function get_chamados_operador(){
+        $status = array(1);//array com os status para aparecer na lista de chamado do operador
+        $this->db->select('*');
+        $this->db->from('chamados');
+        $this->db->where('id_area_atendimento', $dados['id_area_atendimento']);
+        $this->db->where_in('status', $status);
+        $query=$this->db->get();
+        return $query->result();
+    }
+
+    public function inserir_chamado($dados){       
+        return $this->db->insert('chamados', $dados);
+    }
+
+    public function get_areas($areas){
+        $this->db->select('*');
+        $this->db->from('areas');
+        if($areas != 'all'){
+            $areas = explode(';',$areas);
+            $this->db->where_in('id_area', $areas);
+        }
+        $query=$this->db->get();
+        return $query->result_array();
+    }
+
+    public function get_perfil($id_perfil){
+        $this->db->select('*');
+        $this->db->from('perfil');
+        $query=$this->db->get();
+        return $query->row_array();
+    }
+
+    public function get_filiais($id_empresa){
+        $this->db->select('*');
+        $this->db->from('filiais');
+        $this->db->where('id_empresa', $id_empresa);
+        $query=$this->db->get();
+        return $query->result_array();
+    }
+
+    public function get_empresas($empresas){
+        $this->db->select('*');
+        $this->db->from('empresas');
+        if($empresas != 'all'){
+            $empresas = explode(';',$empresas);
+            $this->db->where_in('id_empresa', $empresas);
+        }
+        $query=$this->db->get();
+        return $query->result_array();
+    }
+
+    public function get_departamentos($id_filial){
+        $this->db->select('*');
+        $this->db->from('departamentos');
+        $this->db->where('id_filial', $id_filial);
+        $query=$this->db->get();
+        return $query->result_array();
+    }
+
+    public function get_problemas($id_area){
+        $this->db->select('*');
+        $this->db->from('problemas');
+        $this->db->where('id_area', $id_area);
+        $query=$this->db->get();
+        return $query->result_array();
+    }
+
+    public function get_sub_problemas($id_problema){
+        $this->db->select('*');
+        $this->db->from('sub_problemas');
+        $this->db->where('id_problema', $id_problema);
+        $query=$this->db->get();
+        return $query->result_array();
+    }
+
+    public function get_user_list(){
+        $this->db->select('*');
+        $this->db->from('user');
+        $this->db->where('status', 1);
+        $query=$this->db->get();
+        return $query->result();
+    }
+
+    public function get_user_by_id($userID){
+        $this->db->select('*');
+        $this->db->from('user');
+        $this->db->where('user_id', $userID);
+        $query=$this->db->get();
+        return $query->result_array();
+    }
+
+    public function validate_email($postData){
+        $this->db->where('email', $postData['email']);
+        $this->db->where('status', 1);
+        $this->db->from('user');
+        $query=$this->db->get();
+
+        if ($query->num_rows() == 0)
+            return true;
+        else
+            return false;
+    }
+
+    public function insert_user($postData){
+
+        $validate = $this->validate_email($postData);
+
+        if($validate){
+            $password = $this->generate_password();
+            $data = array(
+                'email' => $postData['email'],
+                'name' => $postData['name'],
+                'role' => $postData['role'],
+                'password' => md5($password),
+                'created_at' => date('Y\-m\-d\ H:i:s A'),
+            );
+            $this->db->insert('user', $data);
+
+            $message = "Here is your account details:<br><br>Email: ".$postData['email']."<br>Tempolary password: ".$password."<br>Please change your password after login.<br><br> you can login at ".base_url().".";
+            $subject = "New Account Creation";
+            $this->send_email($message,$subject,$postData['email']);
+
+            $module = "User Management";
+            $activity = "add new user ".$postData['email'];
+            $this->insert_log($activity, $module);
+            return array('status' => 'success', 'message' => '');
+
+        }else{
+            return array('status' => 'exist', 'message' => '');
+        }
+
+    }
+
+    public function update_user_details($postData){
+
+        $oldData = $this->get_user_by_id($postData['id']);
+
+        if($oldData[0]['email'] == $postData['email'])
+            $validate = true;
+        else
+            $validate = $this->validate_email($postData);
+
+        if($validate){
+            $data = array(
+                'email' => $postData['email'],
+                'name' => $postData['name'],
+                'role' => $postData['role'],
+            );
+            $this->db->where('user_id', $postData['id']);
+            $this->db->update('user', $data);
+
+            $record = "(".$oldData[0]['email']." to ".$postData['email'].", ".$oldData[0]['name']." to ".$postData['name'].",".$oldData[0]['role']." to ".$postData['role'].")";
+
+            $module = "User Management";
+            $activity = "update user ".$oldData[0]['email']."`s details ".$record;
+            $this->insert_log($activity, $module);
+            return array('status' => 'success', 'message' => $record);
+        }else{
+            return array('status' => 'exist', 'message' => '');
+        }
+
+    }
+
+
+    public function deactivate_user($email,$id){
+
+        $data = array(
+            'status' => 0,
+        );
+        $this->db->where('user_id', $id);
+        $this->db->update('user', $data);
+
+        $module = "User Management";
+        $activity = "delete user ".$email;
+        $this->insert_log($activity, $module);
+        return array('status' => 'success', 'message' => '');
+
+    }
+
+    public function reset_user_password($email,$id){
+
+        $password = $this->generate_password();
+        $data = array(
+            'password' => md5($password),
+        );
+        $this->db->where('user_id', $id);
+        $this->db->update('user', $data);
+
+        $message = "Your account password has been reset.<br><br>Email: ".$email."<br>Tempolary password: ".$password."<br>Please change your password after login.<br><br> you can login at ".base_url().".";
+        $subject = "Password Reset";
+        $this->send_email($message,$subject,$email);
+
+        $module = "User Management";
+        $activity = "reset user ".$email."`s password";
+        $this->insert_log($activity, $module);
+        return array('status' => 'success', 'message' => '');
+
+    }
+
+    public function generate_password(){
+        $chars = "abcdefghjkmnopqrstuvwxyzABCDEFGHJKMNOPQRSTUVWXYZ023456789!@#$%^&*()_=";
+        $password = substr( str_shuffle( $chars ), 0, 10 );
+
+        return $password;
+    }
+
+    public function insert_log($activity, $module){
+        $id = $this->session->userdata('user_id');
+
+        $data = array(
+            'fk_user_id' => $id,
+            'activity' => $activity,
+            'module' => $module,
+            'created_at' => date('Y\-m\-d\ H:i:s A')
+        );
+        $this->db->insert('activity_log', $data);
+    }
+
+    public function get_activity_log(){
+       /* Array of database columns which should be read and sent back to DataTables. Use a space where
+         * you want to insert a non-database field (for example a counter or static image)
+         */
+        
+        $aColumns = array('date_time', 'activity', 'email', 'module');
+        $aColumnsWhere = array('activity_log.created_at', 'activity', 'email', 'module');
+        $aColumnsJoin = array('activity_log.created_at as date_time', 'activity', 'email', 'module');
+
+        // DB table to use
+        $sTable = 'activity_log';
+    
+        $iDisplayStart = $this->input->get_post('iDisplayStart', true);
+        $iDisplayLength = $this->input->get_post('iDisplayLength', true);
+        $iSortCol_0 = $this->input->get_post('iSortCol_0', true);
+        $iSortingCols = $this->input->get_post('iSortingCols', true);
+        $sSearch = $this->input->get_post('sSearch', true);
+        $sEcho = $this->input->get_post('sEcho', true);
+    
+        // Paging
+        if(isset($iDisplayStart) && $iDisplayLength != '-1')
+        {
+            $this->db->limit($this->db->escape_str($iDisplayLength), $this->db->escape_str($iDisplayStart));
+        }
+        
+        // Ordering
+        if(isset($iSortCol_0))
+        {
+            for($i=0; $i<intval($iSortingCols); $i++)
+            {
+                $iSortCol = $this->input->get_post('iSortCol_'.$i, true);
+                $bSortable = $this->input->get_post('bSortable_'.intval($iSortCol), true);
+                $sSortDir = $this->input->get_post('sSortDir_'.$i, true);
+    
+                if($bSortable == 'true')
+                {
+                    
+                    $this->db->order_by($aColumns[intval($this->db->escape_str($iSortCol))], $this->db->escape_str($sSortDir));
+                    
+                }
+            }
+        }
+        
+        /* 
+         * Filtering
+         * NOTE this does not match the built-in DataTables filtering which does it
+         * word by word on any field. It's possible to do here, but concerned about efficiency
+         * on very large tables, and MySQL's regex public functionality is very limited
+         */
+        if(isset($sSearch) && !empty($sSearch))
+        {
+            for($i=0; $i<count($aColumns); $i++)
+            {
+                $bSearchable = $this->input->get_post('bSearchable_'.$i, true);
+                
+                // Individual column filtering
+                if(isset($bSearchable) && $bSearchable == 'true')
+                {
+                    $this->db->or_like($aColumnsWhere[$i], $this->db->escape_like_str($sSearch));
+
+                }
+            }
+        }
+        
+        // Select Data
+        $this->db->join('user', 'activity_log.fk_user_id = user.user_id', 'left');
+        $this->db->select('SQL_CALC_FOUND_ROWS '.str_replace(' , ', ' ', implode(', ', $aColumnsJoin)), false);
+        $rResult = $this->db->get($sTable);
+    
+        // Data set length after filtering
+        $this->db->select('FOUND_ROWS() AS found_rows');
+        $iFilteredTotal = $this->db->get()->row()->found_rows;
+    
+        // Total data set length
+        $iTotal = $this->db->count_all($sTable);
+    
+        // Output
+        $output = array(
+            'sEcho' => intval($sEcho),
+            'iTotalRecords' => $iTotal,
+            'iTotalDisplayRecords' => $iFilteredTotal,
+            'aaData' => array()
+        );
+        
+        foreach($rResult->result_array() as $aRow)
+        {
+            $row = array();
+            
+            foreach($aColumns as $col)
+            {
+                if($col == 'date_time') $aRow[$col] = preg_replace('/\s/','<br />',$aRow[$col]);
+                $row[] = $aRow[$col];
+            }
+    
+            $output['aaData'][] = $row;
+        }
+    
+        return $output;
+    }
+
+
+    
+
+}
+
+/* End of file */
