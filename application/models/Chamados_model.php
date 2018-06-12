@@ -9,7 +9,7 @@ class Chamados_model extends CI_Model {
         parent::__construct();
     }
 
-    public function functionget_chamados_user($dados){
+    public function get_chamados_user($dados){
         $status = array(1,2);//array com os status para aparecer na lista de chamado do usuario
         $this->db->select('*');
         $this->db->from('chamados');
@@ -92,6 +92,10 @@ class Chamados_model extends CI_Model {
         $this->db->where('id_problema', $id_problema);
         $query=$this->db->get();
         return $query->result_array();
+    }
+
+    public function insere_chamado($data){
+        return $this->db->insert('chamados', $data);
     }
 
     public function get_user_list(){

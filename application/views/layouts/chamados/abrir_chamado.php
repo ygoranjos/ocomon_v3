@@ -1,6 +1,4 @@
-    <!-- Page Content -->
-    <div id="page-wrapper">
-        <div class="container-fluid">
+
             <div class="row">
                 <div class="col-lg-12">
                     <h3 class="page-header">{page}</h3>
@@ -19,7 +17,8 @@
                         <div class="panel-body">
 
                             <div class="col-lg-12">
-                            <?= form_open_multipart('todos/update_completed'); ?>
+                            <?= form_open_multipart('chamados/inserir_chamado'); ?>
+
                                         <div class="form-group">
                                             <label>Nome</label>
                                             <input name="nome" class="form-control" value="{nome}">
@@ -28,6 +27,11 @@
                                         <div class="form-group">
                                             <label>Telefone/Ramal</label>
                                             <input name="telefone" class="form-control" value="{telefone}">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Equipamento</label>
+                                            <input name="equipamento" class="form-control" >
                                         </div>
 
                                         <div class="form-group">
@@ -94,9 +98,8 @@
                     <!-- /.panel -->
                 </div>
             </div>
+
+             
         
 
-        </div>
-        <!-- /.container-fluid -->
-    </div>
-    <!-- /#page-wrapper -->
+       

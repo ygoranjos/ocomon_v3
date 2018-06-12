@@ -10,7 +10,7 @@ class MY_Controller extends CI_Controller
             redirect(base_url());
         }
 
-        $this->layout->debug['active'] = true;
+        $this->layout->debug['active'] = false;
         
         $this->layout->title('Ocomon');
         $this->layout->company = 'Ocomon V3';

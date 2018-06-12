@@ -12,7 +12,7 @@
 
 <body>
 
-    <div id="wrapper">
+<div id="wrapper">
 
 <!-- Navigation -->
 <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
@@ -345,7 +345,32 @@
     <!-- /.navbar-static-side -->
 </nav>
 
+
+   <!-- Page Content -->
+   <div id="page-wrapper">     
+        <div class="container-fluid">
+        <?php if($this->session->flashdata('success')):?>
+                &nbsp;<div class="alert alert-success">
+                <a href="#" class="close" data-dismiss="alert">&times;</a>
+                <strong><?= $this->session->flashdata('success'); ?></strong>
+                </div>
+            <?php elseif($this->session->flashdata('error')):?>
+                &nbsp;<div class="alert alert-warning">
+                <a href="#" class="close" data-dismiss="alert">&times;</a>
+                <strong><?= $this->session->flashdata('error'); ?></strong>
+                </div>
+            <?php endif;?>
+
+    
+        
+
 {content}
+
+</div>
+        <!-- /.container-fluid -->
+        </div>
+    <!-- /#page-wrapper -->
+    
 
 </div>
 <div class="col-lg-12 text-center" style="padding:5px;"><small>&copy; 2018 by <a target="_blank" href="https://www.linkedin.com/in/ygor-anjos-90a1057b">Ygor Anjos</a></small></div>

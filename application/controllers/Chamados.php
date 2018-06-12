@@ -93,8 +93,35 @@ class Chamados extends MY_Controller {
     }
 
     public function inserir_chamado() {
+
+        if($this->input->post()) {
+
+			$dados = array(				
+				'contato' => $this->input->post('nome'),
+				'telefone' => $this->input->post('telefone'),				
+				'id_empresa' => $this->input->post('empresa'),	
+				'id_filial' => $this->input->post('filial'),	
+				'id_departamento' => $this->input->post('departamento'),	
+				'id_area_atendimento' => $this->input->post('area'),	
+				'id_problema' => $this->input->post('problema'),		
+				'id_sub_problema' => $this->input->post('sub-problema'),	
+                'descricao' => $this->input->post('descricao'),
+                'equipamento' => $this->input->post('equipamento'),
+                'id_user'=> $this->session->userdata('id_user')            							
+            );
+
+            $insert = $this->chamados_model->insere_chamado($dados);
+
+            if($insert){
+                $this->session->set_flashdata('success', 'Chamado Aberto com sucesso');
+            }else{
+                $this->session->set_flashdata('error', 'Ops! ocorreu um erro, entre em contato com o administrador');
+            }
         
-        $this->layout->output();
+        }
+
+        redirect(base_url('chamados/meus_chamados'));
+        
     }
 
     public function get_departamentos($id_filial = null) {
